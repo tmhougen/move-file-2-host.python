@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, getopt, os, time
-olderthan = '#target.host.has.to.be.defined'
+olderthan = '#days.has.to.be.defined'
 path = '#target.directory.has.to.be.defined'
 
 
@@ -29,7 +29,7 @@ for opt, arg in opts:
         olderthan = arg
     elif opt in ("-d", "--dir"):
         path = arg
-if olderthan == '#target.host.has.to.be.defined' \
+if olderthan == 'path' \
 or path == '#target.directory.has.to.be.defined':
     usage()
 
