@@ -38,6 +38,7 @@ or path == '#target.directory.has.to.be.defined':
     usage()
 
 # Set filefilter and for each file, copy to target and remove source.
+# os.path.split(path)[1]
 files = fnmatch.filter(os.listdir(path), filter)
 if len(files) == 0:
     sys.exit('No files found in ' + path + filter)
