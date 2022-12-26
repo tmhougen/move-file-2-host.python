@@ -47,6 +47,21 @@ def rotatelogs(maxfilesize):
             os.rename(fromname, toname)
     return fromname
 
+def verifyTarget(targethost, targethostdir):
+    command = ['ssh', targethost, 'cd', targethostdir]
+    process = Popen(command, stderr=PIPE, stdout=PIPE)
+    stdout, stderr = process.communicate()
+    exit_code = process.wait()
+    if exit_code != 0:
+        print('[ERR] cant locate ' + trg_dir + ' on ' + trg)
+        print (stderr)
+        print('-------------------------------------------------')
+        print(' - Tips: ssh ' + trg + ' \"mkdir ' + trg_dir + '\"')
+        print(' - Tips: ssh-copy-id ' + trg)
+        return 1
+    return 0
+
+
 # Block validate input args
 argi = sys.argv[1:]
 try:
@@ -70,19 +85,10 @@ if trg == '#target.host.has.to.be.defined' \
 or trg_dir == '#target.directory.has.to.be.defined':
     usage()
 
-# Block, move files from sourcedir to tatget useing scp for copy and ssh to delete
 # Check if target dir exists
-command = ['ssh', trg, 'cd', trg_dir]
-process = Popen(command, stderr=PIPE, stdout=PIPE)
-stdout, stderr = process.communicate()
-exit_code = process.wait()
-if exit_code != 0:
-    print('[ERR] cant locate ' + trg_dir + ' on ' + trg)
-    print (stderr)
-    print('-------------------------------------------------')
-    print(' - Tips: ssh ' + trg + ' \"mkdir ' + trg_dir + '\"')
-    print(' - Tips: ssh-copy-id ' + trg)
-    sys.exit(1)
+print(verifyTarget(trg, trg_dir))
+# Block, move files from sourcedir to tatget useing scp for copy and ssh to delete
+
 
 # Set filefilter and for each file, copy to target and remove source.
 files = fnmatch.filter(os.listdir(src_dir), src_filter)
@@ -92,22 +98,28 @@ for fname in files:
     if not os.path.isdir(os.path.join(src_dir, fname)):
         # print(fname)
         workfname = '.' + fname
+        date_string = f'{datetime.now():%Y-%m-%d %H:%M:%S%z}'
         os.rename(os.path.join(src_dir,fname), os.path.join(src_dir,workfname))
-        cmd = 'scp -q ' + os.path.join(src_dir,workfname) + ' ' + trg + ':' + trg_dir + '/' + workfname
-        if os.system(cmd) == 0:
-            date_string = f'{datetime.now():%Y-%m-%d %H:%M:%S%z}'
-            cmd = 'ssh ' + trg + ' "mv ' +  trg_dir \
-            + '/' + workfname + ' ' + trg_dir + '/' + fname  + '"'
-            if os.system(cmd) == 0:
+
+        copyCmd = 'scp -q ' + os.path.join(src_dir,workfname) + ' ' \
+        + trg + ':' + trg_dir + '/' + workfname
+
+        setOrginalNamecmd = 'ssh ' + trg + ' "mv ' +  trg_dir \
+        + '/' + workfname + ' ' + trg_dir + '/' + fname  + '"'
+
+        if os.system(copyCmd) == 0:
+            if os.system(setOrginalNamecmd) == 0:
                 if os.access(os.path.join(src_dir,workfname), os.W_OK):
                     with suppress(OSError):
                         os.remove(os.path.join(src_dir,workfname))
                 else:
                     print('Could not remove: ' + fname)
-                logfilename = rotatelogs(maxlogfilesize)
-                with open(logfilename , "a") as f:
-                    f.write(date_string + " " +trg + ':' \
-                    + trg_dir + '/' + fname + '\n')
         else:
             sys.exit('[ERR] Could not copy to ' + trg + ':' + trg_dir + '/.' + fname)
+
+        logfilename = rotatelogs(maxlogfilesize)
+        with open(logfilename , "a") as f:
+            f.write(date_string + " " +trg + ':' \
+            + trg_dir + '/' + fname + '\n')
+
 sys.exit(0)
