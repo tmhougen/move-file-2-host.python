@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body>
+
+<h1>This is a Heading</h1>
+<div id="time">time</div>
+
+<div id="./details.json">./details.json</div>
+<script>
+setInterval(getDetailsJson, 30000);
+function getDetailsJson() {
+  url = "./details.json"
+  const tid = new Date();
+  fetch(url + "?" + tid)
+    .then((res) => {
+      return res.json();
+    })
+    .then(json => {
+      let text = "<table>";
+      text += "<tr><td colspan=\"4\">";
+      text += "Last GET " + tid.toLocaleTimeString() + " (" + url + ")";
+      text += "</td></tr>";
+      text += "<tr>";
+      text += "<th>status</th>";
+      text += "<th>name</th>";
+      text += "<th>time</th>";
+      text += "<th>up</th>";
+      text += "</tr>"
+      for (let i = 0; i < json.applications.length; i++) {
+        text += "<tr>"
+        text += "<td>" + json.applications[i].status + "</td>";
+        text += "<td>" + json.applications[i].name + "</td>";
+        text += "<td>" + json.applications[i].time + "</td>";
+        text += "<td>" + json.applications[i].up + "</td>";
+        text += "</tr>"
+      }
+      text += "</table>"
+      document.getElementById(url).innerHTML = (text)
+      })
+    .catch(function () {
+        this.dataError = true;
+    })
+}
+getDetailsJson();
+
+setInterval(myTimer, 1000);
+function myTimer() {
+  const d = new Date();
+  document.getElementById("time").innerHTML = d.toLocaleTimeString();
+}
+</script>
+</body>
+</html>
